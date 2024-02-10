@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# See https://wiki.archlinux.org/title/Xinit#xinitrc how to properly start
+# See https://wiki.archlinux.org/title/Xinit#xinitrc how to properly start Awesome WM
 
 . /etc/X11/Xsession
 exec dbus-launch --exit-with-session ${HOME}/.xsession

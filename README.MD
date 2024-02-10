@@ -1,5 +1,8 @@
-# PI configuration of awesome desktop
+# PI Configuration of Awesomewm
 
+# Work in progress !
+
+This documentation is not finalized…
 
 ## System dependencies
 

@@ -12,4 +12,4 @@ run() {
 ## Usage
 ### run "command" option1 optio2…
 
-run "notify-send" -u normal -t 2000 "$SCRIPT_PATH<br><span color='#57dafd' font='26px'>Awesome is launched</span>" -i $SCRIPT_DIR/../awesome-wm-widgets/battery-widget/spaceman.jpg
+run "notify-send" -u normal -t 2000 "<span color='#57dafd' font='26px'>Awesome is launched</span>" -i $SCRIPT_DIR/../assets/logo.png
