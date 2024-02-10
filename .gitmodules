@@ -1,3 +1,9 @@
 [submodule "scripts/tail2notify"]
 	path = scripts/tail2notify
 	url = http://github.com/ryran/tail2notify
+[submodule "wttr-widget"]
+	path = wttr-widget
+	url = https://github.com/pivaldi/wttr-widget.git
+[submodule "awesome-wm-widgets"]
+	path = awesome-wm-widgets
+	url = https://github.com/streetturtle/awesome-wm-widgets.git
