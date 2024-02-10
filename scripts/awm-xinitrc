@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# See https://wiki.archlinux.org/title/Xinit#xinitrc how to properly start
+
+. /etc/X11/Xsession
+exec dbus-launch --exit-with-session ${HOME}/.xsession
+
+pgrep protonvpn > /dev/null && protonvpn d > /dev/null

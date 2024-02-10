@@ -1,0 +1,3 @@
+[submodule "scripts/tail2notify"]
+	path = scripts/tail2notify
+	url = http://github.com/ryran/tail2notify

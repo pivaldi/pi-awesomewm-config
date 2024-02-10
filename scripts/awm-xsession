@@ -1,0 +1,148 @@
+#!/bin/bash
+
+PROTON_VPN_CMD='/home/pi/bin/protonvpn'
+AWM_LOG_DIR="$HOME/.cache/awesome"
+AWM_STDOUT_FILE="$AWM_LOG_DIR/stdout.log"
+AWM_STDERR_FILE="$AWM_LOG_DIR/stderr.log"
+
+[ -e "$AWM_LOG_DIR" ] || mkdir -p "$AWM_LOG_DIR"
+
+touch $AWM_STDOUT_FILE
+touch $AWM_STDERR_FILE
+
+[[ -f ~/.Xdefaults ]] && xrdb -merge ~/.Xdefaults
+
+function cmd_exists {
+  command -v $1 >/dev/null 2>&1
+}
+
+function is_runing {
+   pgrep -f $1 >/dev/null
+}
+
+run() {
+  if ! is_runing "$1"; then
+    "$@" &
+  fi
+}
+
+
+xhost +local:root
+
+export ALTERNATE_EDITOR="emacs"  EDITOR="emacsclient" VISUAL="emacsclient "
+export TEXTEDIT="$EDITOR"
+export XDG_DATA_HOME="$HOME/.local/share/"
+export XDG_CONFIG_HOME="$HOME/.config/"
+export XDG_DATA_DIRS="/usr/local/share/:/usr/share/"
+export XDG_CONFIG_DIRS="/etc/xdg/"
+export XDG_CACHE_HOME="$HOME/.cache"
+alias edit="$EDITOR"
+
+setxkbmap -model pc105 -layout fr -variant oss
+# to do after setxkbmap
+xmodmap ~/.Xmodmap
+
+### https://protonvpn.com/support/linux-vpn-tool/
+cmd_exists protonvpn && {
+  ## To connect to the fastest Secure-Core server
+  # cmd_exists protonvpn && sudo protonvpn c -sc &
+
+  ## To connect to the fastest server in FR
+  # sudo protonvpn c –cc FR
+  run "$PROTON_VPN_CMD" c --sc
+
+  # Create 60s existing file to prevent checking protonvpn test by
+  # xmobar during 60s
+  protonvpnStartingFile=/tmp/protonvpnstarting
+  touch $protonvpnStartingFile
+  {
+    sleep 60
+    rm $protonvpnStartingFile
+  } &
+}
+
+# Set wallpaper
+# /usr/bin/feh --bg-scale ~/Documents/mes_images/wallpapers/fractale.png
+
+# https://help.ubuntu.com/community/SynapticsTouchpad
+cmd_exists synclient && {
+  synclient HorizTwoFingerScroll=1
+}
+
+[ -e ~/bin/trackball.sh ] && ~/bin/trackball.sh
+
+# See https://wiki.archlinux.org/title/GNOME/Keyring#Launching
+# dbus-update-activation-environment --all
+
+## Audio service
+systemctl --user start pipewire-pulse.service
+
+run "$XDG_CONFIG_HOME/awesome/scripts/awm-battery-monitor.sh"
+
+
+## Suspend on low battery
+$XDG_CONFIG_HOME/awesome/scripts//awm-battery-monitor.sh &
+
+if [ -x /usr/bin/gnome-keyring-daemon ] && [ -z "${DESKTOP_SESSION}" ]; then
+  is_runing gnome-keyring-daemon || {
+    # systemctl --user start gnome-keyring-daemon.service
+    ## Use command seahorse to customize…
+    eval $(gnome-keyring-daemon --start --components=pkcs11,secrets,gpg)
+    export GNOME_KEYRING_CONTROL GNOME_KEYRING_PID GPG_AGENT_INFO
+  }
+fi
+
+# if [ -x /usr/bin/ssh-agent ] && [ -z "${SSH_AUTH_SOCK}" ]; then
+#   is_runing ssh-agent || {
+#     id1=$HOME/.ssh/identity
+#     id2=$HOME/.ssh/id_dsa
+#     id3=$HOME/.ssh/id_rsa
+#     id4=$HOME/.ssh/id_ecdsa
+#     if [ -f $id1 -o -f $id2 -o -f $id3  -o -f $id4 ]; then
+#       eval "$(/usr/bin/ssh-agent -s)"
+#     fi
+#   }
+# fi
+
+# # Starting gpg-agent
+# if [ -x /usr/bin/gpg-agent ] && [ -z "$SSH_AUTH_SOCK" ] && [ -z "$GNOME_KEYRING_CONTROL" ]; then
+#   is_runing gpg-agent || eval $(gpg-agent --daemon)
+# fi
+
+## Disable screen touch for Lenovo Thinkpad T560, T580, T590
+MELFA_STR='Melfas LGDisplay Incell Touch'
+xinput list | grep -q "$MELFA_STR" && {
+  xinput | grep "$MELFA_STR" | grep -Po 'id=\d+' | cut -d= -f2 | xargs xinput disable
+}
+
+
+{
+  sleep 5 ## Waiting display was available
+
+# Manages the power sources on the computer and the devices that can
+  # be controlled to reduce their power consumption (such as LCD
+  # brightness level, monitor sleep)
+  # Utiliser xfce4-power-manager-settings pour configurer
+  run xfce4-power-manager
+
+  # XDG_CURRENT_DESKTOP=GNOME nm-tray --sm-disable &
+  ## Network Manager Tray/Applet
+  run cmst
+  # cmd_exists nm-applet && nm-applet --sm-disable &
+
+  # cmd_exists redshift && redshift &
+
+  cmd_exists aa-notify && sudo /usr/bin/aa-notify --display :0 -p
+
+  cmd_exists xbindkeys && xbindkeys
+
+  # notify-send 'VULS report' "$(2>&1 sudo /home/pi/bin/vuls-report.sh)"
+} &
+
+
+export DESKTOP_SESSION=awesome
+
+[ -e "$AWM_STDOUT_FILE" ] && rm "$AWM_STDOUT_FILE"
+[ -e "$AWM_STDERR_FILE" ] && rm "$AWM_STDERR_FILE"
+
+exec /usr/bin/awesome  >> $AWM_STDOUT_FILE 2>> $AWM_STDERR_FILE
